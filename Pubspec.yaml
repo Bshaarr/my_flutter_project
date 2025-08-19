@@ -1,0 +1,19 @@
+name: madressi_app
+description: تطبيق مدرسي لإدارة الاختبارات والمراسلة عبر واتساب
+
+environment:
+  sdk: ">=2.17.0 <3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  firebase_core: ^2.0.0
+  firebase_auth: ^4.0.0
+  cloud_firestore: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: fonts/Cairo-Regular.ttf
