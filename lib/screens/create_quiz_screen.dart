@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 
 class CreateQuizScreen extends StatefulWidget {
   const CreateQuizScreen({super.key});
@@ -11,26 +11,38 @@ class CreateQuizScreen extends StatefulWidget {
 class _CreateQuizScreenState extends State<CreateQuizScreen> {
   final TextEditingController quizTitleController = TextEditingController();
   List<QuestionItem> questions = [QuestionItem()];
+  bool _isSaving = false;
 
-  void saveQuiz() async {
-    if (quizTitleController.text.isEmpty) return;
-
+  Future<void> _saveQuiz() async {
+    if (quizTitleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('أدخل عنوان الاختبار')),
+      );
+      return;
+    }
+    setState(() => _isSaving = true);
     final quizData = {
       'title': quizTitleController.text.trim(),
       'questions': questions.map((q) => q.toMap()).toList(),
       'created_at': Timestamp.now(),
     };
-
-    await FirebaseFirestore.instance.collection('quizzes').add(quizData);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تم حفظ الاختبار بنجاح')),
-    );
-
-    setState(() {
-      quizTitleController.clear();
-      questions = [QuestionItem()];
-    });
+    try {
+      await FirebaseFirestore.instance.collection('quizzes').add(quizData);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حفظ الاختبار بنجاح')),
+      );
+      setState(() {
+        quizTitleController.clear();
+        questions = [QuestionItem()];
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('فشل الحفظ: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
@@ -46,7 +58,6 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
               textAlign: TextAlign.right,
               decoration: const InputDecoration(
                 labelText: 'عنوان الاختبار',
-                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
@@ -71,16 +82,23 @@ class _CreateQuizScreenState extends State<CreateQuizScreen> {
               icon: const Icon(Icons.add),
               label: const Text('إضافة سؤال'),
               onPressed: () {
-                setState(() {
-                  questions.add(QuestionItem());
-                });
+                setState(() => questions.add(QuestionItem()));
               },
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: saveQuiz,
-              child: const Text('حفظ الاختبار'),
-            )
+            SizedBox(
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isSaving ? null : _saveQuiz,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('حفظ الاختبار'),
+              ),
+            ),
           ],
         ),
       ),
@@ -128,7 +146,11 @@ class _QuestionItemWidgetState extends State<QuestionItemWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('السؤال رقم ${widget.index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              'السؤال رقم ${widget.index + 1}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.right,
+            ),
             TextField(
               controller: widget.question.questionController,
               textAlign: TextAlign.right,
@@ -141,9 +163,7 @@ class _QuestionItemWidgetState extends State<QuestionItemWidget> {
                   value: i,
                   groupValue: widget.question.correctOption,
                   onChanged: (val) {
-                    setState(() {
-                      widget.question.correctOption = val!;
-                    });
+                    setState(() => widget.question.correctOption = val!);
                   },
                   title: TextField(
                     controller: widget.question.options[i],
@@ -160,10 +180,11 @@ class _QuestionItemWidgetState extends State<QuestionItemWidget> {
                 onPressed: widget.onDelete,
                 icon: const Icon(Icons.delete, color: Colors.red),
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 }
+

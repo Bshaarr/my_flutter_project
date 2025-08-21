@@ -11,6 +11,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
   firebase_core: ^2.0.0
   firebase_auth: ^4.0.0
   cloud_firestore: ^4.0.0
@@ -21,8 +23,3 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  fonts:
-    - family: Cairo
-      fonts:
-        - asset: fonts/Cairo-Regular.ttf
-        - asset: fonts/Cairo-Bold.ttf
